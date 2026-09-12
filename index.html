@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>별자리 탐험 - 계절별 별자리 찾기</title>
+  <meta name="description" content="계절별 주요 별자리를 인터랙티브하게 탐색하고 그리스·로마 신화를 알아보세요">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#05060f;--glass:rgba(15,20,45,.7);--gb:rgba(120,140,255,.15);
+      --t:#e8eaff;--t2:#9da3c7;--t3:#5a6088;
+      --pri:#ff7eb3;--pri2:#ff9ec6;--glow:rgba(255,126,179,.3);--priRgb:255,126,179;
+      --font:'Noto Sans KR',sans-serif;--r:14px;
+    }
+    html{font-size:15px}
+    body{font-family:var(--font);background:var(--bg);color:var(--t);min-height:100dvh;overflow-x:hidden;line-height:1.65;-webkit-tap-highlight-color:transparent}
+    #bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+    .shoot{position:fixed;height:2px;border-radius:50%;z-index:1;pointer-events:none;opacity:0;background:linear-gradient(90deg,rgba(255,255,255,.8),transparent);animation:shoot 1.4s ease-in-out forwards}
+    @keyframes shoot{0%{opacity:0;transform:translateX(0) translateY(0) rotate(-35deg)}10%{opacity:1}70%{opacity:1}100%{opacity:0;transform:translateX(300px) translateY(150px) rotate(-35deg)}}
+    .wrap{position:relative;z-index:2;max-width:600px;margin:0 auto;padding:0 16px}
+    header{padding:24px 0 6px;text-align:center}
+    .logo{display:inline-flex;align-items:center;gap:10px}
+    .logo-icon{font-size:1.6rem;animation:tw 3s ease-in-out infinite}
+    @keyframes tw{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.15)}}
+    .logo h1{font-size:1.45rem;font-weight:900;background:linear-gradient(135deg,var(--pri),var(--pri2),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .sub{font-size:.75rem;color:var(--t2);font-weight:300;letter-spacing:.06em;margin-top:2px}
+
+    /* MODE TOGGLE */
+    .mode-bar{display:flex;gap:6px;margin:16px 0 12px;background:rgba(10,13,30,.8);border-radius:28px;padding:4px;border:1px solid var(--gb)}
+    .mode-btn{flex:1;padding:10px 4px;border:none;border-radius:24px;background:transparent;color:var(--t2);font-family:var(--font);font-size:.82rem;font-weight:500;cursor:pointer;transition:all .3s;text-align:center}
+    .mode-btn.on{background:rgba(var(--priRgb),.2);color:#fff;box-shadow:0 0 16px var(--glow)}
+    .mode-btn:active{transform:scale(.95)}
+
+    /* SEASON TABS */
+    .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 20px}
+    .tab{padding:11px 4px;border:1px solid var(--gb);border-radius:28px;background:var(--glass);backdrop-filter:blur(10px);color:var(--t2);font-family:var(--font);font-size:.82rem;font-weight:500;cursor:pointer;transition:all .35s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px}
+    .tab-emoji{font-size:1.2rem}
+    .tab:active{transform:scale(.95)}
+    .tab.on{border-color:var(--pri);color:#fff;box-shadow:0 0 20px var(--glow);background:linear-gradient(135deg,rgba(var(--priRgb),.18),var(--glass))}
+
+    .sh{text-align:center;margin-bottom:14px;animation:fu .5s ease forwards}
+    @keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    .sh h2{font-size:1.2rem;font-weight:700;color:var(--pri)}
+    .sh p{font-size:.78rem;color:var(--t2);margin-top:4px}
+
+    .guide-legend{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:10px;font-size:.68rem;color:var(--t2)}
+    .guide-legend span{display:inline-flex;align-items:center;gap:4px}
+    .gl-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+    .gl-line{width:14px;height:2px;display:inline-block;border-radius:1px}
+
+    .map-wrap{position:relative;width:100%;border-radius:var(--r);overflow:hidden;border:1px solid var(--gb);background:radial-gradient(ellipse at 50% 40%,#0d1130,#050715 70%,#020309);box-shadow:0 12px 50px rgba(0,0,0,.5);margin-bottom:18px}
+    #ccanvas{display:block;width:100%;touch-action:manipulation}
+    .map-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:.66rem;color:var(--t3);background:rgba(5,6,15,.75);padding:4px 12px;border-radius:16px;pointer-events:none;white-space:nowrap}
+
+    .cards{display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+    .card{display:flex;align-items:center;gap:14px;padding:14px;border-radius:var(--r);border:1px solid var(--gb);background:var(--glass);backdrop-filter:blur(10px);cursor:pointer;transition:all .3s;overflow:hidden;opacity:0;animation:ci .4s ease forwards}
+    .card:nth-child(1){animation-delay:.05s}.card:nth-child(2){animation-delay:.12s}.card:nth-child(3){animation-delay:.19s}.card:nth-child(4){animation-delay:.26s}
+    @keyframes ci{to{opacity:1}}
+    .card:active{transform:scale(.98)}
+    .card::after{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--pri);opacity:0;transition:opacity .3s}
+    .card:hover::after,.card:active::after{opacity:1}
+    .card-icon{font-size:1.8rem;flex-shrink:0}
+    .card-body{flex:1;min-width:0}
+    .card-name{font-size:.95rem;font-weight:700}
+    .card-latin{font-size:.72rem;color:var(--pri);font-weight:500}
+    .card-star{font-size:.7rem;color:var(--t2);margin-top:3px;display:flex;align-items:center;gap:4px}
+    .card-star::before{content:'✦';font-size:.55rem;color:var(--pri)}
+    .card-arrow{font-size:.9rem;color:var(--pri);flex-shrink:0}
+
+    .tips{margin-bottom:32px}
+    .tips h3{text-align:center;font-size:.95rem;margin-bottom:12px}
+    .tips-row{display:flex;flex-direction:column;gap:8px}
+    .tip{padding:14px;border-radius:var(--r);border:1px solid var(--gb);background:var(--glass);text-align:center}
+    .tip-ic{font-size:1.4rem;margin-bottom:4px}
+    .tip-t{font-size:.85rem;font-weight:700;margin-bottom:3px}
+    .tip-d{font-size:.72rem;color:var(--t2);line-height:1.5}
+    footer{text-align:center;padding:14px 0 28px;color:var(--t3);font-size:.7rem}
+
+    /* ── 3D SKY VIEW ── */
+    #sky3d{position:fixed;inset:0;z-index:50;background:#020309;display:none;flex-direction:column}
+    #sky3d.on{display:flex}
+    .sky-top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;background:rgba(5,6,15,.85);backdrop-filter:blur(8px);z-index:2;flex-shrink:0}
+    .sky-back{width:36px;height:36px;border-radius:50%;border:1px solid var(--gb);background:var(--glass);color:var(--t);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .sky-back:active{background:rgba(255,255,255,.1)}
+    .sky-title{font-size:1rem;font-weight:700}
+    .sky-compass-mini{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--pri);border:1px solid var(--gb);border-radius:50%;background:var(--glass)}
+    .sky-filters{display:flex;gap:5px;padding:6px 12px 10px;background:rgba(5,6,15,.7);z-index:2;overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch}
+    .sky-filters::-webkit-scrollbar{display:none}
+    .sf{padding:6px 14px;border-radius:20px;border:1px solid var(--gb);background:var(--glass);color:var(--t2);font-family:var(--font);font-size:.72rem;font-weight:500;cursor:pointer;white-space:nowrap;transition:all .25s;flex-shrink:0}
+    .sf.on{border-color:var(--pri);color:#fff;background:rgba(var(--priRgb),.2)}
+    .sf:active{transform:scale(.92)}
+    #skyCanvas{flex:1;display:block;touch-action:none;cursor:grab}
+    #skyCanvas:active{cursor:grabbing}
+    .sky-bottom{display:flex;gap:6px;padding:8px 12px;padding-bottom:max(12px,env(safe-area-inset-bottom));background:rgba(5,6,15,.85);backdrop-filter:blur(8px);z-index:2;overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch;align-items:center}
+    .sky-bottom::-webkit-scrollbar{display:none}
+    .sky-item{padding:7px 14px;border-radius:16px;border:1px solid var(--gb);background:var(--glass);color:var(--t2);font-family:var(--font);font-size:.7rem;font-weight:500;cursor:pointer;white-space:nowrap;transition:all .25s;flex-shrink:0;display:flex;align-items:center;gap:5px}
+    .sky-item:active{transform:scale(.92)}
+    .sky-item .si-icon{font-size:1rem}
+    .sky-dir{position:absolute;font-size:.7rem;font-weight:700;color:rgba(100,180,255,.4);pointer-events:none;z-index:1}
+
+    /* ── MODAL ── */
+    .modal-bg{position:fixed;inset:0;background:rgba(2,3,10,.9);backdrop-filter:blur(6px);z-index:100;opacity:0;visibility:hidden;transition:all .35s;overflow-y:auto;-webkit-overflow-scrolling:touch}
+    .modal-bg.on{opacity:1;visibility:visible}
+    .modal{width:100%;min-height:100%;max-width:600px;margin:0 auto;background:linear-gradient(160deg,#0f1335,#0a0d22 50%,#070a18);transform:translateY(30px);transition:transform .35s}
+    .modal-bg.on .modal{transform:translateY(0)}
+    .m-head{padding:24px 20px 16px;border-bottom:1px solid rgba(120,140,255,.08);position:relative}
+    .m-close{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;border:1px solid var(--gb);background:var(--glass);color:var(--t2);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .m-close:active{background:rgba(255,80,80,.2);color:#ff6b6b}
+    .m-icon{font-size:2.2rem;display:block;margin-bottom:6px}
+    .m-title{font-size:1.4rem;font-weight:900}
+    .m-latin{font-size:.85rem;color:var(--pri);font-weight:500;margin-bottom:6px}
+    .m-badge{display:inline-block;padding:3px 12px;border-radius:16px;font-size:.68rem;font-weight:500;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--t2)}
+    .m-body{padding:18px 20px 32px}
+    .m-sec{margin-bottom:22px}.m-sec:last-child{margin-bottom:0}
+    .m-sec-t{font-size:.75rem;font-weight:700;color:var(--pri);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+    .m-sec-t::before{content:'';width:14px;height:2px;background:var(--pri);border-radius:1px}
+    .m-canvas-w{width:100%;aspect-ratio:5/3;background:radial-gradient(ellipse at center,#0d1130,#050715);border-radius:var(--r);overflow:hidden;border:1px solid rgba(120,140,255,.08)}
+    .m-canvas-w canvas{width:100%;height:100%}
+    .igrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .iitem{padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px}
+    .ilbl{font-size:.63rem;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+    .ival{font-size:.82rem;font-weight:500}
+    .myth{font-size:.85rem;line-height:1.85;font-weight:300}
+    .myth p{margin-bottom:8px}.myth p:last-child{margin-bottom:0}
+    .htf{padding:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:var(--r);border-left:3px solid var(--pri)}
+    .htf p{font-size:.82rem;line-height:1.75;color:var(--t2)}
+
+    @media(min-width:640px){
+      .wrap{padding:0 24px}header{padding:36px 0 8px}.logo h1{font-size:1.9rem}
+      .tabs{gap:10px}.tab{padding:13px 8px;font-size:.88rem}
+      .cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+      .tips-row{flex-direction:row}.tips-row .tip{flex:1}
+      .m-head{padding:32px 28px 20px}.m-body{padding:24px 28px 36px}
+    }
+  </style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<div class="wrap" id="mainView">
+  <header>
+    <div class="logo"><span class="logo-icon">✦</span><h1>별자리 탐험</h1></div>
+    <p class="sub">계절의 밤하늘을 수놓는 별자리와 그리스·로마 신화</p>
+  </header>
+
+  <div class="mode-bar">
+    <button class="mode-btn on" data-mode="seasonal">📋 계절별 성도</button>
+    <button class="mode-btn" data-mode="sky3d">🌐 3D 천구</button>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab on" data-s="spring"><span class="tab-emoji">🌸</span>봄</button>
+    <button class="tab" data-s="summer"><span class="tab-emoji">☀️</span>여름</button>
+    <button class="tab" data-s="autumn"><span class="tab-emoji">🍂</span>가을</button>
+    <button class="tab" data-s="winter"><span class="tab-emoji">❄️</span>겨울</button>
+  </nav>
+
+  <div class="sh" id="sh"><h2 id="shT"></h2><p id="shD"></p></div>
+  <div class="guide-legend" id="legend"></div>
+  <section class="map-wrap"><canvas id="ccanvas"></canvas><div class="map-hint">✦ 별자리를 터치하면 신화를 볼 수 있어요</div></section>
+  <section class="cards" id="cards"></section>
+  <section class="tips">
+    <h3>🔭 별자리 관측 팁</h3>
+    <div class="tips-row">
+      <div class="tip"><div class="tip-ic">🌙</div><div class="tip-t">달이 없는 밤</div><div class="tip-d">초승달~그믐달 시기에 관측하세요.</div></div>
+      <div class="tip"><div class="tip-ic">🏔️</div><div class="tip-t">어두운 장소</div><div class="tip-d">도심 빛 공해를 피해 교외로.</div></div>
+      <div class="tip"><div class="tip-ic">👁️</div><div class="tip-t">암순응 15분</div><div class="tip-d">어두운 곳에서 눈을 적응시키세요.</div></div>
+    </div>
+  </section>
+  <footer>✦ 별자리 탐험 — 밤하늘의 이야기를 찾아서 ✦</footer>
+</div>
+
+<!-- 3D SKY VIEW -->
+<div id="sky3d">
+  <div class="sky-top">
+    <button class="sky-back" id="skyBack">←</button>
+    <span class="sky-title">🌐 3D 천구</span>
+    <div class="sky-compass-mini" id="compassMini">N</div>
+  </div>
+  <div class="sky-filters" id="skyFilters">
+    <button class="sf on" data-f="all">전체</button>
+    <button class="sf" data-f="spring">🌸 봄</button>
+    <button class="sf" data-f="summer">☀️ 여름</button>
+    <button class="sf" data-f="autumn">🍂 가을</button>
+    <button class="sf" data-f="winter">❄️ 겨울</button>
+  </div>
+  <canvas id="skyCanvas"></canvas>
+  <div class="sky-bottom" id="skyList"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="mbg">
+  <div class="modal" id="modal">
+    <div class="m-head">
+      <button class="m-close" id="mc">✕</button>
+      <span class="m-icon" id="mi"></span>
+      <h2 class="m-title" id="mt"></h2>
+      <p class="m-latin" id="ml"></p>
+      <span class="m-badge" id="mb"></span>
+    </div>
+    <div class="m-body">
+      <div class="m-sec"><h3 class="m-sec-t">별자리 형태</h3><div class="m-canvas-w"><canvas id="mccanvas"></canvas></div></div>
+      <div class="m-sec"><h3 class="m-sec-t">기본 정보</h3><div class="igrid" id="mig"></div></div>
+      <div class="m-sec"><h3 class="m-sec-t">그리스·로마 신화</h3><div class="myth" id="mmyth"></div></div>
+      <div class="m-sec"><h3 class="m-sec-t">찾는 방법</h3><div class="htf" id="mhtf"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==============================================================
+   CONSTELLATION DATA (seasonal flat view)
+   ============================================================== */
+const DATA={
+spring:{title:'봄의 별자리',emoji:'🌸',desc:'북두칠성 → 아르크투루스 → 스피카 "봄의 대곡선"을 따라가세요.',pri:'#ff7eb3',pri2:'#ff9ec6',glow:'rgba(255,126,179,.3)',priRgb:'255,126,179',
+guides:[
+{label:'북두칠성',stars:[[.42,.08],[.46,.10],[.50,.09],[.53,.10],[.58,.08],[.63,.07],[.68,.05]],lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[0,3]],color:'rgba(100,180,255,.35)',labelPos:[.55,.03],isRef:true},
+{label:'북극성 ★',stars:[[.22,.06]],lines:[],color:'rgba(100,180,255,.5)',labelPos:[.22,.02],isRef:true},
+{label:'봄의 대곡선 ↓',type:'guidePath',path:[[.68,.05],[.30,.52],[.62,.78]],color:'rgba(255,200,100,.3)',labelPos:[.76,.12]}
+],
+constellations:[
+{id:'leo',name:'사자자리',latin:'Leo',icon:'🦁',mainStar:'레굴루스 (Regulus)',mag:'1.4등급',month:'4월',area:'947 평방도',brief:'봄밤 남쪽의 왕, 사자의 심장별',
+stars:[[.18,.35,3.5,'레굴루스'],[.14,.28,2.5,''],[.10,.30,2.5,'알기에바'],[.09,.24,2,''],[.07,.20,2,''],[.06,.26,2,''],[.15,.38,1.8,''],[.36,.32,3,'데네볼라'],[.30,.27,2.5,''],[.24,.29,2.2,'']],
+lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,2],[0,6],[6,1],[0,9],[9,8],[8,7]],
+mythology:`<p>네메아의 사자는 어떤 무기로도 뚫을 수 없는 가죽을 지닌 괴수였습니다. 헤라클레스의 열두 과업 중 첫 번째가 이 사자를 처치하는 것이었습니다.</p><p>헤라클레스는 맨손으로 사자의 목을 조르는 격투 끝에 승리했고, 사자 가죽을 갑옷으로 삼았습니다. 제우스는 아들의 용맹을 기념하여 사자를 하늘에 올려놓았습니다. 심장별 레굴루스는 '작은 왕'이라는 뜻입니다.</p>`,
+howToFind:`<p><strong>북두칠성</strong> 국자 바닥 두 별을 이어 <strong>남쪽으로 연장</strong>하면 레굴루스를 찾을 수 있습니다. 뒤집어진 물음표 '낫(Sickle)'이 머리, 동쪽 삼각형이 엉덩이입니다.</p>`},
+{id:'virgo',name:'처녀자리',latin:'Virgo',icon:'👩',mainStar:'스피카 (Spica)',mag:'1.0등급',month:'5월',area:'1,294 평방도',brief:'밤하늘 두 번째로 큰 별자리, 밀이삭의 별',
+stars:[[.62,.78,3.8,'스피카'],[.58,.65,2.5,''],[.54,.56,2.8,'빈데미아트릭스'],[.64,.58,2,''],[.70,.64,2.2,''],[.67,.52,1.8,''],[.60,.72,2,''],[.72,.74,1.8,'']],
+lines:[[0,1],[1,2],[1,3],[3,4],[3,5],[0,6],[6,1],[0,7],[7,4]],
+mythology:`<p>처녀자리는 곡물의 여신 <strong>데메테르</strong>와 딸 <strong>페르세포네</strong>의 이야기입니다. 하데스가 페르세포네를 납치하자, 데메테르는 슬픔에 대지의 모든 생명을 시들게 했습니다.</p><p>제우스의 중재로 페르세포네가 봄·여름에는 어머니 곁에, 가을·겨울에는 하데스 곁에 머물게 되어 사계절이 생겼습니다. 스피카는 처녀가 든 밀이삭입니다.</p>`,
+howToFind:`<p>북두칠성 손잡이 곡선을 따라 <strong>아르크투루스</strong>를 지나 연장하면 청백색 <strong>스피카</strong>에 도달합니다. 이것이 <strong>"봄의 대곡선"</strong>입니다.</p>`},
+{id:'bootes',name:'목동자리',latin:'Boötes',icon:'🧑‍🌾',mainStar:'아르크투루스 (Arcturus)',mag:'-0.05등급',month:'5월',area:'907 평방도',brief:'봄 하늘 가장 밝은 별, 곰을 지키는 자',
+stars:[[.30,.52,4,'아르크투루스'],[.27,.42,2.5,''],[.23,.36,2,''],[.28,.32,2.3,'네카르'],[.34,.34,2.3,''],[.37,.42,2.5,''],[.33,.46,2,''],[.26,.48,2,'']],
+lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[0,6],[6,5],[0,7],[7,1]],
+mythology:`<p>목동자리는 큰곰자리(칼리스토)의 아들 <strong>아르카스</strong>입니다. 헤라의 저주로 곰이 된 어머니를 알아보지 못한 아르카스가 창을 들자, 제우스가 함께 하늘로 올렸습니다.</p><p>아르크투루스는 '곰을 지키는 자'라는 뜻으로, 늘 큰곰자리 가까이에서 빛납니다.</p>`,
+howToFind:`<p><strong>북두칠성 손잡이</strong> 곡선을 남쪽으로 연장하면 주황색의 매우 밝은 <strong>아르크투루스</strong>입니다. "봄의 대곡선" 첫 번째 별!</p>`},
+{id:'ursa',name:'큰곰자리',latin:'Ursa Major',icon:'🐻',mainStar:'두베 (Dubhe)',mag:'1.8등급',month:'4월',area:'1,280 평방도',brief:'북두칠성을 품은 세 번째로 큰 별자리',
+stars:[[.42,.08,3.2,'두베'],[.46,.10,3,'메라크'],[.50,.09,3,'페크다'],[.53,.10,3,'메그레즈'],[.58,.08,3.2,'알리오스'],[.63,.07,3,'미자르'],[.68,.05,3.2,'알카이드']],
+lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[0,3]],
+mythology:`<p>큰곰자리는 아르테미스를 따르는 님프 <strong>칼리스토</strong>입니다. 제우스의 사랑으로 아르카스를 낳자, 헤라가 질투하여 곰으로 변하게 했습니다.</p><p>아들 아르카스가 곰이 된 어머니에게 창을 들이대자, 제우스가 꼬리를 잡아 하늘로 던져 올렸습니다. 두베·메라크를 이어 5배 연장하면 북극성을 찾습니다.</p>`,
+howToFind:`<p><strong>북두칠성</strong>(국자 모양 7별)이 큰곰자리 일부입니다. 봄에 가장 높이 올라갑니다. 국자 입구 두 별을 5배 연장하면 <strong>북극성</strong>!</p>`}
+]},
+
+summer:{title:'여름의 별자리',emoji:'☀️',desc:'베가-데네브-알타이르 "여름 대삼각형"을 먼저 찾으세요!',pri:'#ffd700',pri2:'#ffe44d',glow:'rgba(255,215,0,.3)',priRgb:'255,215,0',
+guides:[
+{label:'북극성 ★',stars:[[.15,.05]],lines:[],color:'rgba(100,180,255,.5)',labelPos:[.15,.02],isRef:true},
+{label:'여름 대삼각형 △',type:'guidePath',path:[[.45,.18],[.72,.15],[.40,.58],[.45,.18]],color:'rgba(255,220,100,.25)',labelPos:[.55,.08]}
+],
+constellations:[
+{id:'scorpius',name:'전갈자리',latin:'Scorpius',icon:'🦂',mainStar:'안타레스 (Antares)',mag:'1.1등급',month:'7월',area:'497 평방도',brief:'붉은 심장별의 S자 전갈',
+stars:[[.18,.55,2.5,'δ'],[.16,.60,2.5,''],[.15,.65,2,''],[.17,.72,4,'안타레스'],[.19,.78,2.5,''],[.17,.84,2.3,''],[.13,.90,2,''],[.10,.94,2.5,'샤울라'],[.12,.97,2,'']],
+lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[6,8]],
+mythology:`<p>오리온이 "세상에 나를 이길 짐승은 없다"고 자만하자, 대지의 여신 <strong>가이아</strong>가 거대한 전갈을 보내 오리온을 쏘아 죽였습니다.</p><p>오리온자리와 전갈자리는 절대 동시에 뜨지 않습니다. 전갈이 뜨면 오리온은 지고, 죽어서도 피해 도망치는 듯합니다. 붉은 안타레스는 '화성의 라이벌'입니다.</p>`,
+howToFind:`<p>여름밤 <strong>남쪽 지평선 가까이</strong> 붉은 <strong>안타레스</strong>를 찾으세요. 위로 머리, 아래로 S자 꼬리가 이어집니다.</p>`},
+{id:'lyra',name:'거문고자리',latin:'Lyra',icon:'🎵',mainStar:'베가 (Vega)',mag:'0.0등급',month:'8월',area:'286 평방도',brief:'여름 대삼각형 꼭짓점, 오르페우스의 수금',
+stars:[[.45,.18,4.5,'베가'],[.48,.28,2,''],[.51,.26,2,''],[.53,.33,2,''],[.49,.35,2,''],[.46,.30,1.8,'']],
+lines:[[0,1],[0,5],[1,4],[5,4],[1,2],[2,3],[3,4]],
+mythology:`<p><strong>오르페우스</strong>는 님프 에우리디케가 독사에 죽자 저승으로 내려가 하데스 앞에서 연주했습니다. "뒤를 돌아보지 마라"는 조건으로 에우리디케를 돌려보냈으나, 참지 못해 뒤를 돌아보았고 에우리디케는 영원히 사라졌습니다.</p>`,
+howToFind:`<p>여름밤 <strong>머리 위</strong>의 밝고 푸른 <strong>베가</strong>! 아래 작은 평행사변형이 거문고 몸체입니다. 대삼각형의 가장 밝은 꼭짓점!</p>`},
+{id:'cygnus',name:'백조자리',latin:'Cygnus',icon:'🦢',mainStar:'데네브 (Deneb)',mag:'1.25등급',month:'8월',area:'804 평방도',brief:'은하수 위의 거대한 십자가(북십자성)',
+stars:[[.72,.15,3.8,'데네브'],[.69,.26,2.5,''],[.74,.30,2,''],[.64,.30,2,''],[.69,.38,2.8,''],[.69,.48,3,'알비레오']],
+lines:[[0,1],[1,4],[4,5],[1,2],[1,3]],
+mythology:`<p><strong>제우스</strong>가 스파르타 왕비 <strong>레다</strong>에게 다가가기 위해 백조로 변신했습니다. 레다는 두 알을 낳아 헬레네(트로이 전쟁의 원인)와 쌍둥이 카스토르·폴룩스가 태어났습니다.</p>`,
+howToFind:`<p><strong>베가</strong> 동쪽의 밝은 <strong>데네브</strong>에서 남쪽으로 뻗은 큰 <strong>십자가(북십자성)</strong>가 백조자리입니다. 꼬리=데네브, 부리=알비레오.</p>`},
+{id:'aquila',name:'독수리자리',latin:'Aquila',icon:'🦅',mainStar:'알타이르 (Altair)',mag:'0.76등급',month:'8월',area:'652 평방도',brief:'은하수 건너편의 견우성',
+stars:[[.40,.58,4,'알타이르'],[.37,.54,2.5,'알샤인'],[.44,.54,2.5,'타라제드'],[.34,.49,1.8,''],[.46,.48,1.8,''],[.38,.64,2,''],[.42,.68,1.8,'']],
+lines:[[0,1],[0,2],[1,3],[2,4],[0,5],[5,6]],
+mythology:`<p>제우스의 전령 독수리가 소년 <strong>가니메데스</strong>를 올림포스로 데려간 이야기입니다. 동아시아에서 알타이르는 <strong>견우성</strong>으로, 은하수 건너 직녀(베가)와 칠석 전설의 주인공입니다.</p>`,
+howToFind:`<p>대삼각형 세 번째 꼭짓점! 알타이르 양옆 두 별이 <strong>일직선</strong>으로 나란해 쉽게 구별됩니다.</p>`}
+]},
+
+autumn:{title:'가을의 별자리',emoji:'🍂',desc:'카시오페이아 W자에서 에티오피아 왕가 이야기를 따라가세요.',pri:'#ff8c42',pri2:'#ffa566',glow:'rgba(255,140,66,.3)',priRgb:'255,140,66',
+guides:[
+{label:'북극성 ★',stars:[[.50,.05]],lines:[],color:'rgba(100,180,255,.5)',labelPos:[.50,.02],isRef:true},
+{label:'카시오페이아→페가수스',type:'guidePath',path:[[.72,.12],[.35,.32]],color:'rgba(255,180,80,.25)',labelPos:[.53,.17]}
+],
+constellations:[
+{id:'pegasus',name:'페가수스자리',latin:'Pegasus',icon:'🐎',mainStar:'마르카브 (Markab)',mag:'2.5등급',month:'10월',area:'1,121 평방도',brief:'가을 하늘의 거대한 사각형, 천마',
+stars:[[.28,.38,3,'마르카브'],[.24,.26,3,'쉐아트'],[.40,.22,3,'알게니브'],[.44,.36,3,'알페라츠'],[.18,.46,2.5,'에닞'],[.14,.40,2,''],[.10,.32,2,'']],
+lines:[[0,1],[1,2],[2,3],[3,0],[1,4],[4,5],[5,6]],
+mythology:`<p><strong>페가수스</strong>는 페르세우스가 메두사의 목을 벨 때 피에서 태어난 천마입니다. 벨레로폰이 타고 키마이라를 물리쳤으나, 교만해져 올림포스에 오르려 하자 떨어뜨려졌습니다. 제우스의 벼락 운반자가 되었습니다.</p>`,
+howToFind:`<p>가을밤 머리 위 <strong>거대한 사각형</strong> = <strong>"페가수스의 대사각형"</strong>. 카시오페이아 W에서 남쪽으로 내려오면 찾습니다.</p>`},
+{id:'andromeda',name:'안드로메다자리',latin:'Andromeda',icon:'👸',mainStar:'알페라츠 (Alpheratz)',mag:'2.1등급',month:'11월',area:'722 평방도',brief:'사슬에 묶인 공주, 안드로메다 은하',
+stars:[[.44,.36,3,'알페라츠'],[.52,.33,2.8,''],[.60,.30,3,'미라크'],[.68,.28,2.8,'알마크'],[.55,.26,2,''],[.62,.22,2,''],[.65,.36,1.8,'']],
+lines:[[0,1],[1,2],[2,3],[1,4],[4,5],[2,6]],
+mythology:`<p><strong>안드로메다</strong>는 카시오페이아의 딸입니다. 어머니의 허영심에 분노한 포세이돈이 괴물을 보냈고, 바위에 묶인 안드로메다를 <strong>페르세우스</strong>가 메두사의 머리로 괴물을 돌로 만들어 구출했습니다.</p>`,
+howToFind:`<p>대사각형 북동쪽 <strong>알페라츠</strong>에서 동쪽 별줄을 따라가세요. 미라크 위의 희미한 빛이 230만 광년의 <strong>안드로메다 은하(M31)</strong>!</p>`},
+{id:'perseus',name:'페르세우스자리',latin:'Perseus',icon:'⚔️',mainStar:'미르팍 (Mirfak)',mag:'1.8등급',month:'12월',area:'615 평방도',brief:'메두사를 처치한 영웅, 악마의 별',
+stars:[[.72,.50,3.5,'미르팍'],[.68,.56,2.5,''],[.65,.62,2.5,''],[.62,.68,2,''],[.75,.58,2.5,''],[.78,.64,2,''],[.72,.62,3,'알골'],[.68,.44,2,''],[.75,.44,2,'']],
+lines:[[7,0],[0,8],[0,1],[1,2],[2,3],[0,4],[4,5],[4,6],[6,1]],
+mythology:`<p>아테나·헤르메스의 도움으로 투명 모자, 날개 신발을 얻은 <strong>페르세우스</strong>는 방패에 비친 모습만 보며 메두사의 목을 베었습니다. <strong>알골</strong>은 '악마의 별'로, 2.87일 주기로 밝기가 변합니다.</p>`,
+howToFind:`<p><strong>카시오페이아 W</strong> 아래 은하수를 따라 남동쪽 밝은 <strong>미르팍</strong>. 남서쪽 <strong>알골</strong>은 깜빡이는 변광성!</p>`},
+{id:'cassiopeia',name:'카시오페이아자리',latin:'Cassiopeia',icon:'👑',mainStar:'쉐다르 (Schedar)',mag:'2.2등급',month:'11월',area:'598 평방도',brief:'북극성 근처 W자의 허영심 왕비',
+stars:[[.62,.14,3,'쉐다르'],[.67,.10,2.8,'카프'],[.72,.14,3,'치'],[.77,.10,2.8,'루크바'],[.80,.16,2.5,'ε']],
+lines:[[0,1],[1,2],[2,3],[3,4]],
+mythology:`<p><strong>카시오페이아</strong>는 자신과 딸이 님프들보다 아름답다 자랑한 왕비입니다. 포세이돈이 벌로 <strong>1년 절반을 거꾸로 매달리게</strong> 했습니다. W/M자가 번갈아 보이는 것이 이 벌입니다.</p>`,
+howToFind:`<p>북극성 근처 뚜렷한 <strong>W/M자</strong>! 북두칠성과 북극성 사이 두고 반대편입니다. 초보자도 쉽게 찾는 별자리!</p>`}
+]},
+
+winter:{title:'겨울의 별자리',emoji:'❄️',desc:'오리온 허리띠 세 별을 찾으면 나머지가 모두 보입니다!',pri:'#7ec8e3',pri2:'#a3daef',glow:'rgba(126,200,227,.3)',priRgb:'126,200,227',
+guides:[
+{label:'북극성 ★',stars:[[.85,.05]],lines:[],color:'rgba(100,180,255,.5)',labelPos:[.85,.02],isRef:true},
+{label:'벨트→시리우스 ↙',type:'guidePath',path:[[.32,.42],[.22,.72]],color:'rgba(100,200,255,.3)',labelPos:[.23,.56]},
+{label:'벨트→알데바란 ↗',type:'guidePath',path:[[.32,.38],[.55,.22]],color:'rgba(255,160,80,.3)',labelPos:[.46,.26]}
+],
+constellations:[
+{id:'orion',name:'오리온자리',latin:'Orion',icon:'🏹',mainStar:'베텔게우스 (Betelgeuse)',mag:'0.4등급 (변광)',month:'1월',area:'594 평방도',brief:'겨울 밤하늘의 제왕, 허리띠 세 별',
+stars:[[.25,.26,4,'베텔게우스'],[.38,.52,4,'리겔'],[.30,.30,3,'벨라트릭스'],[.34,.38,2.8,'민타카'],[.33,.40,2.8,'알닐람'],[.32,.42,2.8,'알니타크'],[.33,.28,2,''],[.26,.50,2,''],[.32,.45,1.5,''],[.33,.47,1.5,''],[.34,.49,1.5,'']],
+lines:[[6,2],[2,0],[0,3],[3,4],[4,5],[5,7],[5,1],[2,3],[1,3],[8,9],[9,10]],
+mythology:`<p><strong>오리온</strong>은 포세이돈의 아들, 거인 사냥꾼입니다. 아르테미스와 깊은 우정을 나눴으나 아폴론이 바다 위 오리온의 머리를 먼 표적이라 속여 아르테미스에게 쏘게 했습니다.</p><p>진실을 안 아르테미스가 오리온을 하늘에 올렸습니다. 허리띠 세 별(민타카·알닐람·알니타크)은 밤하늘의 상징입니다.</p>`,
+howToFind:`<p>겨울밤 남쪽 <strong>일렬 세 별</strong>(허리띠)! 왼쪽 위 붉은 <strong>베텔게우스</strong>, 오른쪽 아래 푸른 <strong>리겔</strong> = 모래시계 형태. 겨울 별자리의 출발점!</p>`},
+{id:'taurus',name:'황소자리',latin:'Taurus',icon:'🐂',mainStar:'알데바란 (Aldebaran)',mag:'0.9등급',month:'1월',area:'797 평방도',brief:'붉은 눈의 황소, V자 히아데스',
+stars:[[.55,.25,3.8,'알데바란'],[.51,.20,2,''],[.53,.17,2,''],[.57,.18,2,''],[.59,.20,2,''],[.47,.14,2.5,'엘나트'],[.63,.14,2.3,''],[.51,.28,1.8,''],[.49,.24,1.8,'']],
+lines:[[0,1],[1,5],[0,3],[3,6],[1,2],[2,3],[0,7],[7,8],[8,1],[3,4],[4,0]],
+mythology:`<p>제우스가 페니키아 공주 <strong>에우로파</strong>에게 반해 순백 황소로 변신, 등에 태우고 크레타까지 건넜습니다. 에우로파 이름은 유럽(Europe)의 기원이 되었습니다. 알데바란은 '뒤따르는 자'입니다.</p>`,
+howToFind:`<p>오리온 허리띠를 <strong>오른쪽 위로 연장</strong>→붉은 <strong>알데바란</strong>. V자 히아데스 성단이 황소 얼굴, 위쪽 별 무리가 <strong>플레이아데스(좀생이별)</strong>!</p>`},
+{id:'gemini',name:'쌍둥이자리',latin:'Gemini',icon:'👬',mainStar:'폴룩스 (Pollux)',mag:'1.2등급',month:'2월',area:'514 평방도',brief:'나란히 빛나는 두 형제의 별',
+stars:[[.70,.30,3.2,'카스토르'],[.67,.35,3.5,'폴룩스'],[.71,.38,2,''],[.73,.45,2,''],[.68,.43,2,''],[.65,.48,2.2,''],[.63,.54,2,''],[.69,.50,2,'']],
+lines:[[0,1],[0,2],[2,3],[3,7],[1,4],[4,5],[5,6]],
+mythology:`<p>쌍둥이 <strong>카스토르</strong>(필멸자)와 <strong>폴룩스</strong>(불멸자). 카스토르가 전사하자 폴룩스가 자신의 불멸을 나누게 해달라 제우스에게 간청, 감동받은 제우스가 둘을 함께 하늘에 올려 영원히 나란히 빛나게 했습니다.</p>`,
+howToFind:`<p>베텔게우스 <strong>위쪽(북동)</strong>에 나란한 두 밝은 별 = <strong>카스토르</strong>(위)·<strong>폴룩스</strong>(아래). 폴룩스가 약간 더 밝고 주황빛!</p>`},
+{id:'canis',name:'큰개자리',latin:'Canis Major',icon:'🐕',mainStar:'시리우스 (Sirius)',mag:'-1.46등급',month:'2월',area:'380 평방도',brief:'밤하늘 가장 밝은 별 시리우스',
+stars:[[.22,.72,5,'시리우스'],[.18,.78,2.5,''],[.15,.84,2,''],[.20,.87,2.5,'아다라'],[.25,.84,2,''],[.28,.80,2.5,''],[.24,.78,2,'']],
+lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[0,6],[6,5],[1,6]],
+mythology:`<p>오리온의 충실한 사냥개입니다. "절대 놓치지 않는 개" <strong>라이라프스</strong>가 "절대 잡히지 않는 여우"를 쫓는 역설이 벌어져, 제우스가 둘 다 하늘에 올렸습니다. <strong>시리우스</strong>는 밤하늘 최고 밝기의 별입니다.</p>`,
+howToFind:`<p>오리온 허리띠를 <strong>왼쪽 아래로 연장</strong>→밤하늘 최고 밝기 <strong>시리우스</strong>! 다이아몬드처럼 찬란합니다.</p>`}
+]}
+};
+
+/* ==============================================================
+   3D SKY POSITIONS  (center RA°, Dec°) + angular size
+   ============================================================== */
+const SKY_POS={
+  polaris:{phi:15,theta:89,label:'북극성 ★',size:4,color:'#6eb8ff'},
+  leo:{phi:157,theta:15,span:22},
+  virgo:{phi:195,theta:-2,span:28},
+  bootes:{phi:218,theta:32,span:20},
+  ursa:{phi:172,theta:58,span:28},
+  scorpius:{phi:248,theta:-26,span:22},
+  lyra:{phi:279,theta:38,span:14},
+  cygnus:{phi:308,theta:42,span:22},
+  aquila:{phi:297,theta:8,span:18},
+  pegasus:{phi:338,theta:22,span:22},
+  andromeda:{phi:10,theta:38,span:20},
+  perseus:{phi:50,theta:44,span:18},
+  cassiopeia:{phi:18,theta:62,span:14},
+  orion:{phi:82,theta:4,span:22},
+  taurus:{phi:66,theta:18,span:20},
+  gemini:{phi:108,theta:24,span:18},
+  canis:{phi:102,theta:-22,span:18}
+};
+
+const SEASON_COLORS={spring:'#ff7eb3',summer:'#ffd700',autumn:'#ff8c42',winter:'#7ec8e3'};
+const DEG=Math.PI/180;
+
+/* ==============================================================
+   BG STARS
+   ============================================================== */
+class BG{
+  constructor(c){this.c=c;this.x=c.getContext('2d');this.s=[];this.resize();this.init();addEventListener('resize',()=>this.resize())}
+  resize(){this.c.width=innerWidth;this.c.height=innerHeight}
+  init(){this.s=[];const n=Math.floor(innerWidth*innerHeight/2500);for(let i=0;i<n;i++)this.s.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.5+.2,a:Math.random()*.5+.15,sp:Math.random()*.004+.001,ph:Math.random()*Math.PI*2})}
+  draw(t){this.x.clearRect(0,0,this.c.width,this.c.height);for(const s of this.s){const tw=Math.sin(t*s.sp+s.ph)*.3+.7;this.x.beginPath();this.x.arc(s.x,s.y,s.r,0,Math.PI*2);this.x.fillStyle=`rgba(210,215,255,${s.a*tw})`;this.x.fill()}}
+  run(t){this.draw(t);requestAnimationFrame(t2=>this.run(t2))}
+}
+
+/* ==============================================================
+   FLAT CONSTELLATION MAP
+   ============================================================== */
+class CMap{
+  constructor(cv){this.cv=cv;this.cx=cv.getContext('2d');this.data=[];this.guides=[];this.hover=null;this.dpr=devicePixelRatio||1;this.resize();this.bindE();addEventListener('resize',()=>this.resize())}
+  resize(){const p=this.cv.parentElement,w=p.clientWidth,h=Math.min(w*.95,520);this.cv.width=w*this.dpr;this.cv.height=h*this.dpr;this.cv.style.width=w+'px';this.cv.style.height=h+'px';this.cx.setTransform(this.dpr,0,0,this.dpr,0,0);this.w=w;this.h=h}
+  set(c,g){this.data=c;this.guides=g||[];this.hover=null;this._bg=null}
+  bindE(){
+    const hit=(e)=>{const r=this.cv.getBoundingClientRect(),pt=e.touches?e.touches[0]:e,mx=pt.clientX-r.left,my=pt.clientY-r.top;this.hover=null;for(const c of this.data)for(const s of c.stars)if(Math.hypot(mx-s[0]*this.w,my-s[1]*this.h)<22){this.hover=c;return}};
+    this.cv.addEventListener('mousemove',hit);
+    this.cv.addEventListener('touchstart',e=>{hit(e);if(this.hover){e.preventDefault();app.openModal(this.hover,app.season)}},{passive:false});
+    this.cv.addEventListener('click',()=>{if(this.hover)app.openModal(this.hover,app.season)});
+    this.cv.addEventListener('mouseleave',()=>{this.hover=null})
+  }
+  draw(t,pri){
+    const cx=this.cx,w=this.w,h=this.h;cx.clearRect(0,0,w,h);
+    if(!this._bg){this._bg=[];for(let i=0;i<Math.floor(w*h/600);i++)this._bg.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1+.2,a:Math.random()*.3+.08,ph:Math.random()*Math.PI*2,sp:Math.random()*.002+.001})}
+    for(const s of this._bg){const tw=Math.sin(t*s.sp+s.ph)*.3+.7;cx.beginPath();cx.arc(s.x,s.y,s.r,0,Math.PI*2);cx.fillStyle=`rgba(170,180,220,${s.a*tw})`;cx.fill()}
+    for(const g of this.guides){if(g.type==='guidePath'){cx.save();cx.strokeStyle=g.color;cx.lineWidth=2;cx.setLineDash([8,6]);cx.beginPath();for(let i=0;i<g.path.length;i++){const px=g.path[i][0]*w,py=g.path[i][1]*h;i===0?cx.moveTo(px,py):cx.lineTo(px,py)}cx.stroke();cx.setLineDash([]);if(g.path.length>=2){const l=g.path[g.path.length-1],p=g.path[g.path.length-2],ax=l[0]*w,ay=l[1]*h,an=Math.atan2((l[1]-p[1])*h,(l[0]-p[0])*w);cx.beginPath();cx.moveTo(ax,ay);cx.lineTo(ax-10*Math.cos(an-.4),ay-10*Math.sin(an-.4));cx.lineTo(ax-10*Math.cos(an+.4),ay-10*Math.sin(an+.4));cx.closePath();cx.fillStyle=g.color;cx.fill()}cx.font='bold 10px Noto Sans KR';cx.fillStyle=g.color.replace(/[\d.]+\)$/,'.7)');cx.textAlign='center';cx.fillText(g.label,g.labelPos[0]*w,g.labelPos[1]*h);cx.restore();continue}
+    cx.save();if(g.lines.length){cx.strokeStyle=g.color;cx.lineWidth=1;cx.setLineDash([3,3]);for(const ln of g.lines){const a=g.stars[ln[0]],b=g.stars[ln[1]];cx.beginPath();cx.moveTo(a[0]*w,a[1]*h);cx.lineTo(b[0]*w,b[1]*h);cx.stroke()}cx.setLineDash([])}for(const s of g.stars){cx.beginPath();cx.arc(s[0]*w,s[1]*h,2.2,0,Math.PI*2);cx.fillStyle=g.color;cx.fill()}cx.font='bold 10px Noto Sans KR';cx.fillStyle=g.color;cx.textAlign='center';cx.fillText(g.label,g.labelPos[0]*w,g.labelPos[1]*h);cx.restore()}
+    for(const c of this.data){const hov=this.hover===c;cx.strokeStyle=hov?pri:'rgba(140,160,255,.28)';cx.lineWidth=hov?2:1;cx.setLineDash(hov?[]:[4,4]);for(const ln of c.lines){const a=c.stars[ln[0]],b=c.stars[ln[1]];cx.beginPath();cx.moveTo(a[0]*w,a[1]*h);cx.lineTo(b[0]*w,b[1]*h);cx.stroke()}cx.setLineDash([]);for(const s of c.stars){const sx=s[0]*w,sy=s[1]*h,sz=s[2]*(hov?1.3:1),tw=Math.sin(t*.003+sx+sy)*.2+.8;if(sz>2){const g=cx.createRadialGradient(sx,sy,0,sx,sy,sz*4);g.addColorStop(0,hov?`rgba(255,255,255,${.3*tw})`:`rgba(200,210,255,${.12*tw})`);g.addColorStop(1,'transparent');cx.beginPath();cx.arc(sx,sy,sz*4,0,Math.PI*2);cx.fillStyle=g;cx.fill()}cx.beginPath();cx.arc(sx,sy,sz,0,Math.PI*2);cx.fillStyle=hov?`rgba(255,255,255,${tw})`:`rgba(215,220,255,${.75*tw})`;cx.fill()}const ls=c.stars[0];cx.font=hov?'bold 13px Noto Sans KR':'11px Noto Sans KR';cx.fillStyle=hov?pri:'rgba(170,180,210,.7)';cx.textAlign='center';cx.fillText(c.name,ls[0]*w,ls[1]*h-16);if(hov&&ls[3]){cx.font='10px Noto Sans KR';cx.fillStyle='rgba(200,210,240,.55)';cx.fillText('★ '+ls[3],ls[0]*w,ls[1]*h-28)}}
+  }
+}
+
+/* ==============================================================
+   MINI MODAL CANVAS
+   ============================================================== */
+function drawMini(cv,c,pri){
+  const dpr=devicePixelRatio||1,p=cv.parentElement,w=p.clientWidth,h=p.clientHeight||w*.6;cv.width=w*dpr;cv.height=h*dpr;cv.style.width=w+'px';cv.style.height=h+'px';const cx=cv.getContext('2d');cx.setTransform(dpr,0,0,dpr,0,0);
+  for(let i=0;i<60;i++){cx.beginPath();cx.arc(Math.random()*w,Math.random()*h,Math.random()*.7+.2,0,Math.PI*2);cx.fillStyle=`rgba(170,180,220,${Math.random()*.25+.08})`;cx.fill()}
+  let x0=1,x1=0,y0=1,y1=0;for(const s of c.stars){x0=Math.min(x0,s[0]);x1=Math.max(x1,s[0]);y0=Math.min(y0,s[1]);y1=Math.max(y1,s[1])}
+  const cx0=(x0+x1)/2,cy0=(y0+y1)/2,sc=Math.min(w*.65/(x1-x0||.1),h*.65/(y1-y0||.1))/Math.max(w,h);
+  const tx=x=>w/2+(x-cx0)*w*sc*1.2,ty=y=>h/2+(y-cy0)*h*sc*1.2;
+  cx.strokeStyle=pri;cx.lineWidth=2;cx.globalAlpha=.55;for(const ln of c.lines){const a=c.stars[ln[0]],b=c.stars[ln[1]];cx.beginPath();cx.moveTo(tx(a[0]),ty(a[1]));cx.lineTo(tx(b[0]),ty(b[1]));cx.stroke()}cx.globalAlpha=1;
+  for(const s of c.stars){const sx=tx(s[0]),sy=ty(s[1]),sz=s[2]*1.4;const g=cx.createRadialGradient(sx,sy,0,sx,sy,sz*5);g.addColorStop(0,'rgba(255,255,255,.22)');g.addColorStop(1,'transparent');cx.beginPath();cx.arc(sx,sy,sz*5,0,Math.PI*2);cx.fillStyle=g;cx.fill();cx.beginPath();cx.arc(sx,sy,sz,0,Math.PI*2);cx.fillStyle='#fff';cx.fill();if(s[3]){cx.font='11px Noto Sans KR';cx.fillStyle='rgba(200,210,240,.65)';cx.textAlign='center';cx.fillText(s[3],sx,sy+sz+14)}}
+}
+
+/* ==============================================================
+   3D SKY RENDERER
+   ============================================================== */
+class Sky3D{
+  constructor(){
+    this.cv=document.getElementById('skyCanvas');
+    this.cx=this.cv.getContext('2d');
+    this.yaw=180;this.pitch=35;this.fov=80;
+    this.dragging=false;this.lx=0;this.ly=0;
+    this.vx=0;this.vy=0; // inertia
+    this.filter='all';
+    this.constellations3D=[];
+    this.bgStars3D=[];
+    this.hover=null;
+    this.dpr=devicePixelRatio||1;
+    this.active=false;
+    this.buildData();
+    this.buildBgStars();
+    this.buildMilkyWay();
+    this.calcAstro();
+    this.bindDrag();
+    this.bindFilters();
+    this.buildList();
+    addEventListener('resize',()=>this.resize());
+  }
+
+  resize(){
+    const w=this.cv.parentElement?innerWidth:innerWidth;
+    const h=this.cv.clientHeight||innerHeight-120;
+    this.cv.width=w*this.dpr;this.cv.height=h*this.dpr;
+    this.cv.style.width=w+'px';
+    this.cx.setTransform(this.dpr,0,0,this.dpr,0,0);
+    this.w=w;this.h=h;
+  }
+
+  s2c(phi,theta){const p=phi*DEG,t=theta*DEG;return[Math.cos(t)*Math.sin(p),Math.sin(t),Math.cos(t)*Math.cos(p)]}
+
+  viewT(x,y,z){
+    const cy=Math.cos(-this.yaw*DEG),sy=Math.sin(-this.yaw*DEG);
+    const x1=x*cy+z*sy, z1=-x*sy+z*cy;
+    const cp=Math.cos(-this.pitch*DEG),sp=Math.sin(-this.pitch*DEG);
+    return[x1, y*cp+z1*sp, z1*cp-y*sp];
+  }
+
+  proj(x,y,z){
+    if(z<=.01)return null;
+    const sc=(this.w/2)/Math.tan(this.fov*DEG/2);
+    return[this.w/2+x/z*sc, this.h/2-y/z*sc, z];
+  }
+
+  project(phi,theta){
+    const[x,y,z]=this.s2c(phi,theta);
+    const[vx,vy,vz]=this.viewT(x,y,z);
+    return this.proj(vx,vy,vz);
+  }
+
+  buildData(){
+    this.constellations3D=[];
+    for(const[season,sData] of Object.entries(DATA)){
+      for(const c of sData.constellations){
+        const pos=SKY_POS[c.id];if(!pos)continue;
+        const span=pos.span||20;
+        // Find 2D bounding box
+        let mx0=1,mx1=0,my0=1,my1=0;
+        for(const s of c.stars){mx0=Math.min(mx0,s[0]);mx1=Math.max(mx1,s[0]);my0=Math.min(my0,s[1]);my1=Math.max(my1,s[1])}
+        const cx=(mx0+mx1)/2,cy=(my0+my1)/2;
+        const range=Math.max(mx1-mx0,my1-my0)||.1;
+        const scale=span/range;
+        const stars3D=c.stars.map(s=>{
+          const dphi=(s[0]-cx)*scale;
+          const dtheta=-(s[1]-cy)*scale;
+          return{phi:pos.phi+dphi, theta:pos.theta+dtheta, size:s[2], name:s[3]};
+        });
+        this.constellations3D.push({
+          id:c.id, season, data:c,
+          centerPhi:pos.phi, centerTheta:pos.theta,
+          stars:stars3D, lines:c.lines,
+          color:SEASON_COLORS[season]
+        });
+      }
+    }
+  }
+
+  buildBgStars(){
+    this.bgStars3D=[];
+    for(let i=0;i<1500;i++){
+      const phi=Math.random()*360;
+      const theta=Math.asin(Math.random()*2-1)/DEG;
+      this.bgStars3D.push({phi,theta,r:Math.random()*1.2+.2,a:Math.random()*.4+.1,ph:Math.random()*Math.PI*2});
+    }
+  }
+
+  buildMilkyWay(){
+    this.milkyWay=[];
+    for(let i=0;i<250;i++){
+      let a = i*(360/250)*DEG;
+      let x = Math.cos(a), y = Math.sin(a)*Math.sin(62*DEG), z = Math.sin(a)*Math.cos(62*DEG);
+      let raNode = 282*DEG;
+      let x2 = x*Math.cos(raNode) - z*Math.sin(raNode);
+      let z2 = x*Math.sin(raNode) + z*Math.cos(raNode);
+      let phi = Math.atan2(z2, x2)/DEG;
+      let theta = Math.asin(y)/DEG;
+      this.milkyWay.push({
+        phi: phi + (Math.random()-0.5)*20,
+        theta: theta + (Math.random()-0.5)*20,
+        r: Math.random()*25 + 15,
+        a: Math.random()*0.025 + 0.015
+      });
+    }
+  }
+
+  calcAstro(){
+    const D = (Date.now() - 946728000000) / 86400000.0;
+    const sin=Math.sin, cos=Math.cos, asin=Math.asin, atan2=Math.atan2, rad=DEG;
+    
+    // Sun
+    const g = (357.529 + 0.98560028 * D) * rad;
+    const q = 280.459 + 0.98564736 * D;
+    const L = (q + 1.915 * sin(g) + 0.020 * sin(2*g)) * rad;
+    const e = (23.439 - 0.00000036 * D) * rad;
+    
+    this.sun = {
+      phi: ((atan2(cos(e)*sin(L), cos(L)) / rad) % 360 + 360) % 360,
+      theta: asin(sin(e)*sin(L)) / rad
+    };
+    
+    // Moon (simplified)
+    const Lm = (218.316 + 13.176396 * D) * rad;
+    const Mm = (134.963 + 13.064993 * D) * rad;
+    const Fm = (93.272 + 13.229350 * D) * rad;
+    
+    const lon = Lm + 6.289 * rad * sin(Mm);
+    const lat = 5.128 * rad * sin(Fm);
+    
+    this.moon = {
+      phi: ((atan2(sin(lon)*cos(e) - Math.tan(lat)*sin(e), cos(lon)) / rad) % 360 + 360) % 360,
+      theta: asin(sin(lat)*cos(e) + cos(lat)*sin(e)*sin(lon)) / rad
+    };
+  }
+
+  bindDrag(){
+    const cv=this.cv;
+    const start=(x,y)=>{this.dragging=true;this.lx=x;this.ly=y;this.vx=0;this.vy=0};
+    const move=(x,y)=>{
+      if(!this.dragging)return;
+      const dx=x-this.lx,dy=y-this.ly;
+      let pNorm = ((this.pitch % 360) + 360) % 360;
+      const upsideDown = (pNorm > 90 && pNorm < 270);
+      const sign = upsideDown ? -1 : 1;
+      this.yaw -= dx * 0.25 * sign;
+      this.pitch += dy * 0.25;
+      this.vx = -dx * 0.15 * sign;
+      this.vy = dy * 0.15;
+      this.lx = x; this.ly = y;
+    };
+    const end=()=>{this.dragging=false};
+    cv.addEventListener('mousedown',e=>{start(e.clientX,e.clientY)});
+    addEventListener('mousemove',e=>{move(e.clientX,e.clientY)});
+    addEventListener('mouseup',end);
+    
+    let initPinch = 0, initFov = 80;
+    cv.addEventListener('wheel', e => {
+      e.preventDefault();
+      this.fov = Math.max(20, Math.min(130, this.fov + e.deltaY * 0.05));
+    }, {passive: false});
+
+    cv.addEventListener('touchstart',e=>{
+      if(e.touches.length===2){
+        initPinch = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+        initFov = this.fov;
+        this.dragging=false;
+      }else if(e.touches.length===1){
+        start(e.touches[0].clientX,e.touches[0].clientY);
+      }
+    },{passive:true});
+
+    cv.addEventListener('touchmove',e=>{
+      if(e.touches.length===2){
+        e.preventDefault();
+        const dist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+        if(initPinch>0){
+          this.fov = Math.max(20, Math.min(130, initFov * (initPinch/dist)));
+        }
+      }else if(e.touches.length===1){
+        e.preventDefault();
+        move(e.touches[0].clientX,e.touches[0].clientY);
+      }
+    },{passive:false});
+    cv.addEventListener('touchend',e=>{end(); initPinch=0;});
+
+    // Click/tap to select constellation
+    const tap=(x,y)=>{
+      const rect=this.cv.getBoundingClientRect();
+      const mx=x-rect.left, my=y-rect.top;
+      if(this.polarisBtn && Math.hypot(mx-this.polarisBtn.x, my-this.polarisBtn.y) < 45) {
+        this.navigateTo(SKY_POS.polaris.phi, SKY_POS.polaris.theta);
+        return;
+      }
+      const best=this.hitTest(x,y);
+      if(best)app.openModal(best.data, best.season);
+    };
+    let tapStart=0,tapX=0,tapY=0;
+    cv.addEventListener('mousedown',e=>{tapStart=Date.now();tapX=e.clientX;tapY=e.clientY});
+    cv.addEventListener('mouseup',e=>{if(Date.now()-tapStart<300&&Math.hypot(e.clientX-tapX,e.clientY-tapY)<10)tap(e.clientX,e.clientY)});
+    cv.addEventListener('touchstart',e=>{tapStart=Date.now();tapX=e.touches[0].clientX;tapY=e.touches[0].clientY},{passive:true});
+    cv.addEventListener('touchend',e=>{if(Date.now()-tapStart<300){const ct=e.changedTouches[0];if(Math.hypot(ct.clientX-tapX,ct.clientY-tapY)<15)tap(tapX,tapY)}});
+  }
+
+  hitTest(sx,sy){
+    const rect=this.cv.getBoundingClientRect();
+    const mx=sx-rect.left, my=sy-rect.top;
+    let best=null, bestDist=30;
+    for(const c of this.constellations3D){
+      if(this.filter!=='all'&&c.season!==this.filter)continue;
+      for(const s of c.stars){
+        const p=this.project(s.phi,s.theta);
+        if(!p)continue;
+        const d=Math.hypot(mx-p[0],my-p[1]);
+        if(d<bestDist){bestDist=d;best=c}
+      }
+    }
+    return best;
+  }
+
+  bindFilters(){
+    document.querySelectorAll('.sf').forEach(b=>{
+      b.addEventListener('click',()=>{
+        this.filter=b.dataset.f;
+        document.querySelectorAll('.sf').forEach(x=>x.classList.toggle('on',x===b));
+        // Update pri color
+        if(this.filter!=='all'){
+          const d=DATA[this.filter];
+          document.documentElement.style.setProperty('--pri',d.pri);
+          document.documentElement.style.setProperty('--priRgb',d.priRgb);
+        }
+        this.buildList();
+      });
+    });
+  }
+
+  buildList(){
+    const list=document.getElementById('skyList');
+    list.innerHTML='';
+    const items=this.filter==='all'?this.constellations3D:this.constellations3D.filter(c=>c.season===this.filter);
+    items.forEach(c=>{
+      const el=document.createElement('button');
+      el.className='sky-item';
+      el.innerHTML=`<span class="si-icon">${c.data.icon}</span>${c.data.name}`;
+      el.addEventListener('click',()=>this.navigateTo(c.centerPhi,c.centerTheta));
+      list.appendChild(el);
+    });
+  }
+
+  navigateTo(phi,theta){
+    const sy=this.yaw,sp=this.pitch;
+    let dy=phi-sy;
+    if(dy>180)dy-=360;if(dy<-180)dy+=360;
+    const st=performance.now();
+    const anim=(t)=>{
+      const p=Math.min(1,(t-st)/800);
+      const e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+      this.yaw=sy+dy*e;this.pitch=sp+(theta-sp)*e;
+      this.vx=0;this.vy=0;
+      if(p<1)requestAnimationFrame(anim);
+    };
+    requestAnimationFrame(anim);
+  }
+
+  draw(time){
+    if(!this.active)return;
+    const cx=this.cx;
+    this.resize();
+    const w=this.w,h=this.h;
+
+    // Inertia
+    if(!this.dragging){
+      this.yaw+=this.vx; this.pitch+=this.vy;
+      this.vx*=.92; this.vy*=.92;
+    }
+
+    // Normalize yaw
+    this.yaw=((this.yaw%360)+360)%360;
+
+    cx.clearRect(0,0,w,h);
+
+    // Gradient sky background
+    const grd=cx.createLinearGradient(0,h,0,0);
+    grd.addColorStop(0,'#0a0c18');grd.addColorStop(.4,'#060814');grd.addColorStop(1,'#030408');
+    cx.fillStyle=grd;cx.fillRect(0,0,w,h);
+
+    // Horizon glow
+    const horizonY=this.project(this.yaw,0);
+    if(horizonY){
+      const hy=horizonY[1];
+      const hg=cx.createLinearGradient(0,hy-30,0,hy+60);
+      hg.addColorStop(0,'transparent');hg.addColorStop(.5,'rgba(20,40,80,.15)');hg.addColorStop(1,'rgba(10,15,30,.3)');
+      cx.fillStyle=hg;cx.fillRect(0,Math.max(0,hy-30),w,90);
+    }
+
+    // Milky Way
+    for(const mw of this.milkyWay){
+      const p = this.project(mw.phi, mw.theta);
+      if(!p) continue;
+      const tw = Math.sin(time*0.001 + mw.phi)*0.2 + 0.8;
+      const rad = mw.r / p[2] * 2.0;
+      cx.beginPath(); cx.arc(p[0], p[1], rad, 0, Math.PI*2);
+      cx.fillStyle = `rgba(180, 200, 255, ${mw.a * tw})`;
+      cx.fill();
+    }
+
+    // BG stars
+    for(const s of this.bgStars3D){
+      const p=this.project(s.phi,s.theta);
+      if(!p)continue;
+      const tw=Math.sin(time*.002+s.ph)*.3+.7;
+      cx.beginPath();cx.arc(p[0],p[1],s.r/p[2]*1.5,0,Math.PI*2);
+      cx.fillStyle=`rgba(200,210,240,${s.a*tw})`;cx.fill();
+    }
+
+    // Astro rendering (Sun, Moon)
+    const drawAstro = (obj, name, col1, col2, radBase) => {
+      if(!obj) return;
+      const p = this.project(obj.phi, obj.theta);
+      if(!p) return;
+      const r = radBase / p[2] * 1.5;
+      const g = cx.createRadialGradient(p[0],p[1],0,p[0],p[1],r*8);
+      g.addColorStop(0, col1); g.addColorStop(1, 'transparent');
+      cx.beginPath(); cx.arc(p[0], p[1], r*8, 0, Math.PI*2); cx.fillStyle=g; cx.fill();
+      cx.beginPath(); cx.arc(p[0], p[1], r, 0, Math.PI*2); cx.fillStyle=col2; cx.fill();
+      cx.font='bold 11px Noto Sans KR'; cx.fillStyle=col2; cx.textAlign='center';
+      cx.fillText(name, p[0], p[1]-r-8);
+    };
+    drawAstro(this.sun, '태양 ☀️', 'rgba(255, 200, 50, 0.4)', '#ffcc33', 5);
+    drawAstro(this.moon, '달 🌙', 'rgba(255, 255, 255, 0.3)', '#e6e8fa', 4);
+
+    // Polaris
+    this.polarisBtn = null;
+    const [polX, polY, polZ] = this.s2c(SKY_POS.polaris.phi, SKY_POS.polaris.theta);
+    const [pvx, pvy, pvz] = this.viewT(polX, polY, polZ);
+    let polOnScreen = false;
+    const pp = this.project(SKY_POS.polaris.phi, SKY_POS.polaris.theta);
+    
+    if(pp && pp[0]>=0 && pp[0]<=w && pp[1]>=0 && pp[1]<=h){
+      polOnScreen = true;
+      const pr=4/pp[2]*1.5;
+      const pg=cx.createRadialGradient(pp[0],pp[1],0,pp[0],pp[1],pr*6);
+      pg.addColorStop(0,'rgba(110,184,255,.4)');pg.addColorStop(1,'transparent');
+      cx.beginPath();cx.arc(pp[0],pp[1],pr*6,0,Math.PI*2);cx.fillStyle=pg;cx.fill();
+      cx.beginPath();cx.arc(pp[0],pp[1],pr,0,Math.PI*2);cx.fillStyle='#6eb8ff';cx.fill();
+      cx.font='bold 11px Noto Sans KR';cx.fillStyle='rgba(110,184,255,.8)';cx.textAlign='center';
+      cx.fillText('북극성 ★',pp[0],pp[1]-pr-8);
+    }
+    
+    if(!polOnScreen){
+      let dx = pvx, dy = -pvy;
+      let len = Math.hypot(dx, dy);
+      if(len < 0.001) { dx=0; dy=-1; len=1; }
+      dx /= len; dy /= len;
+      const pad = 35;
+      const hw = w/2 - pad, hh = h/2 - pad;
+      const tx = hw / Math.abs(dx || 0.001), ty = hh / Math.abs(dy || 0.001);
+      const t = Math.min(tx, ty);
+      const ex = w/2 + dx * t;
+      const ey = h/2 + dy * t;
+      
+      this.polarisBtn = {x: ex, y: ey};
+      
+      cx.save();
+      cx.translate(ex, ey);
+      cx.rotate(Math.atan2(dy, dx));
+      cx.beginPath();
+      cx.moveTo(14, 0); cx.lineTo(2, 8); cx.lineTo(2, 4); cx.lineTo(-12, 4);
+      cx.lineTo(-12, -4); cx.lineTo(2, -4); cx.lineTo(2, -8); cx.closePath();
+      cx.fillStyle = 'rgba(110,184,255,0.8)'; cx.fill();
+      cx.rotate(-Math.atan2(dy, dx));
+      cx.font = 'bold 11px Noto Sans KR'; cx.fillStyle = 'rgba(110,184,255,1)'; cx.textAlign = 'center';
+      cx.fillText('북극성', -dx*24, -dy*24 + 4);
+      cx.restore();
+    }
+
+    // Cardinal directions at horizon
+    const dirs=[{phi:0,label:'N 북'},{phi:90,label:'E 동'},{phi:180,label:'S 남'},{phi:270,label:'W 서'}];
+    for(const d of dirs){
+      const dp=this.project(d.phi,-2);
+      if(dp&&dp[0]>-100&&dp[0]<w+100){
+        cx.font='bold 12px Noto Sans KR';
+        cx.fillStyle='rgba(100,160,255,.35)';
+        cx.textAlign='center';
+        cx.fillText(d.label,dp[0],dp[1]);
+      }
+    }
+    // Sub-directions
+    const subdirs=[{phi:45,label:'NE'},{phi:135,label:'SE'},{phi:225,label:'SW'},{phi:315,label:'NW'}];
+    for(const d of subdirs){
+      const dp=this.project(d.phi,-2);
+      if(dp&&dp[0]>0&&dp[0]<w){
+        cx.font='10px Noto Sans KR';cx.fillStyle='rgba(100,160,255,.2)';cx.textAlign='center';cx.fillText(d.label,dp[0],dp[1]);
+      }
+    }
+
+    // Constellations
+    for(const c of this.constellations3D){
+      const show=this.filter==='all'||c.season===this.filter;
+      const alpha=show?1:.15;
+      const col=show?c.color:'rgba(100,110,140,.3)';
+
+      // Project all stars
+      const projected=c.stars.map(s=>this.project(s.phi,s.theta));
+      const anyVisible=projected.some(p=>p!==null);
+      if(!anyVisible)continue;
+
+      // Lines
+      cx.strokeStyle=col;cx.lineWidth=show?1.5:0.7;cx.globalAlpha=alpha*.5;
+      for(const ln of c.lines){
+        const a=projected[ln[0]],b=projected[ln[1]];
+        if(!a||!b)continue;
+        cx.beginPath();cx.moveTo(a[0],a[1]);cx.lineTo(b[0],b[1]);cx.stroke();
+      }
+      cx.globalAlpha=1;
+
+      // Stars
+      for(let i=0;i<c.stars.length;i++){
+        const p=projected[i];if(!p)continue;
+        const s=c.stars[i];
+        const sz=Math.max(1,s.size/p[2]*2)*(show?1:.5);
+        const tw=Math.sin(time*.003+s.phi+s.theta)*.2+.8;
+        if(show&&sz>2){
+          const g=cx.createRadialGradient(p[0],p[1],0,p[0],p[1],sz*3.5);
+          g.addColorStop(0,`rgba(255,255,255,${.2*tw*alpha})`);g.addColorStop(1,'transparent');
+          cx.beginPath();cx.arc(p[0],p[1],sz*3.5,0,Math.PI*2);cx.fillStyle=g;cx.fill();
+        }
+        cx.beginPath();cx.arc(p[0],p[1],sz,0,Math.PI*2);
+        cx.fillStyle=show?`rgba(255,255,255,${.85*tw})`:`rgba(150,160,190,${.3*tw})`;cx.fill();
+      }
+
+      // Label
+      const cp=this.project(c.centerPhi,c.centerTheta+3);
+      if(cp&&show){
+        cx.font='bold 12px Noto Sans KR';cx.fillStyle=col;cx.textAlign='center';cx.globalAlpha=.85;
+        cx.fillText(c.data.name,cp[0],cp[1]-12);
+        cx.font='9px Noto Sans KR';cx.fillStyle='rgba(200,210,240,.5)';
+        cx.fillText(c.data.latin,cp[0],cp[1]);
+        cx.globalAlpha=1;
+      }
+    }
+
+    // Summer Triangle guide (when summer filter)
+    if(this.filter==='summer'){
+      const vega=this.project(279,38),deneb=this.project(308,42),altair=this.project(297,8);
+      if(vega&&deneb&&altair){
+        cx.strokeStyle='rgba(255,220,100,.2)';cx.lineWidth=2;cx.setLineDash([8,6]);
+        cx.beginPath();cx.moveTo(vega[0],vega[1]);cx.lineTo(deneb[0],deneb[1]);cx.lineTo(altair[0],altair[1]);cx.closePath();cx.stroke();
+        cx.setLineDash([]);
+        cx.font='bold 10px Noto Sans KR';cx.fillStyle='rgba(255,220,100,.4)';cx.textAlign='center';
+        const mx2=(vega[0]+deneb[0]+altair[0])/3,my2=(vega[1]+deneb[1]+altair[1])/3;
+        cx.fillText('여름 대삼각형',mx2,my2);
+      }
+    }
+
+    // Spring Arc guide
+    if(this.filter==='spring'){
+      const arc=this.project(172,58),boo=this.project(218,32),spi=this.project(195,-2);
+      if(arc&&boo&&spi){
+        cx.strokeStyle='rgba(255,200,100,.2)';cx.lineWidth=2;cx.setLineDash([8,6]);
+        cx.beginPath();cx.moveTo(arc[0],arc[1]);cx.lineTo(boo[0],boo[1]);cx.lineTo(spi[0],spi[1]);cx.stroke();
+        cx.setLineDash([]);
+        cx.font='bold 10px Noto Sans KR';cx.fillStyle='rgba(255,200,100,.4)';cx.textAlign='center';
+        cx.fillText('봄의 대곡선',(arc[0]+boo[0])/2,(arc[1]+boo[1])/2-10);
+      }
+    }
+
+    // Winter: Orion belt guides
+    if(this.filter==='winter'){
+      const belt=this.project(82,4),sirius=this.project(102,-22),aldeb=this.project(66,18);
+      if(belt&&sirius){
+        cx.strokeStyle='rgba(100,200,255,.2)';cx.lineWidth=2;cx.setLineDash([6,5]);
+        cx.beginPath();cx.moveTo(belt[0],belt[1]);cx.lineTo(sirius[0],sirius[1]);cx.stroke();
+        cx.setLineDash([]);
+        cx.font='bold 10px Noto Sans KR';cx.fillStyle='rgba(100,200,255,.35)';cx.textAlign='center';
+        cx.fillText('→ 시리우스',(belt[0]+sirius[0])/2,(belt[1]+sirius[1])/2-8);
+      }
+      if(belt&&aldeb){
+        cx.strokeStyle='rgba(255,160,80,.2)';cx.lineWidth=2;cx.setLineDash([6,5]);
+        cx.beginPath();cx.moveTo(belt[0],belt[1]);cx.lineTo(aldeb[0],aldeb[1]);cx.stroke();
+        cx.setLineDash([]);
+        cx.font='bold 10px Noto Sans KR';cx.fillStyle='rgba(255,160,80,.35)';cx.textAlign='center';
+        cx.fillText('→ 알데바란',(belt[0]+aldeb[0])/2,(belt[1]+aldeb[1])/2-8);
+      }
+    }
+
+    // Compass mini
+    const compassDir=['N','NE','E','SE','S','SW','W','NW'];
+    const idx=Math.round(this.yaw/45)%8;
+    document.getElementById('compassMini').textContent=compassDir[idx];
+
+    requestAnimationFrame(t=>this.draw(t));
+  }
+
+  open(filter){
+    this.active=true;
+    this.filter=filter||'all';
+    document.querySelectorAll('.sf').forEach(b=>b.classList.toggle('on',b.dataset.f===this.filter));
+    if(this.filter!=='all'){
+      // Navigate to the season's sky area
+      const first=this.constellations3D.find(c=>c.season===this.filter);
+      if(first){this.yaw=first.centerPhi;this.pitch=first.centerTheta>40?40:first.centerTheta}
+    }
+    this.buildList();
+    document.getElementById('sky3d').classList.add('on');
+    this.resize();
+    requestAnimationFrame(t=>this.draw(t));
+  }
+
+  close(){
+    this.active=false;
+    document.getElementById('sky3d').classList.remove('on');
+  }
+}
+
+/* ==============================================================
+   APP
+   ============================================================== */
+class App{
+  constructor(){
+    this.season='spring';
+    this.bg=new BG(document.getElementById('bg-canvas'));
+    this.map=new CMap(document.getElementById('ccanvas'));
+    this.sky=new Sky3D();
+    this.mbg=document.getElementById('mbg');
+    this.bindTabs();this.bindModal();this.bindMode();
+    this.setSeason('spring');
+    this.bg.run(0);this.animFlat();this.shootLoop();
+  }
+  bindTabs(){document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>this.setSeason(t.dataset.s))})}
+  bindMode(){
+    document.querySelectorAll('.mode-btn').forEach(b=>{
+      b.addEventListener('click',()=>{
+        if(b.dataset.mode==='sky3d'){
+          document.querySelectorAll('.mode-btn').forEach(x=>x.classList.toggle('on',x===b));
+          this.sky.open(this.season);
+        } else {
+          document.querySelectorAll('.mode-btn').forEach(x=>x.classList.toggle('on',x===b));
+          this.sky.close();
+        }
+      });
+    });
+    document.getElementById('skyBack').addEventListener('click',()=>{
+      this.sky.close();
+      document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('on',b.dataset.mode==='seasonal'));
+    });
+  }
+  setSeason(s){
+    this.season=s;const d=DATA[s];
+    const r=document.documentElement.style;
+    r.setProperty('--pri',d.pri);r.setProperty('--pri2',d.pri2);r.setProperty('--glow',d.glow);r.setProperty('--priRgb',d.priRgb);
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.s===s));
+    const sh=document.getElementById('sh');sh.style.animation='none';sh.offsetHeight;sh.style.animation='fu .5s ease forwards';
+    document.getElementById('shT').textContent=d.title;document.getElementById('shD').textContent=d.desc;
+    document.getElementById('legend').innerHTML=`<span><span class="gl-dot" style="background:rgba(100,180,255,.6)"></span> 참조별</span><span><span class="gl-line" style="background:rgba(255,200,100,.5)"></span> 찾기 경로</span><span><span class="gl-dot" style="background:${d.pri}"></span> 계절 별자리</span>`;
+    this.map._bg=null;this.map.set(d.constellations,d.guides);
+    this.renderCards(d.constellations);
+  }
+  renderCards(cs){
+    const g=document.getElementById('cards');g.innerHTML='';
+    cs.forEach((c,i)=>{
+      const el=document.createElement('div');el.className='card';el.style.animationDelay=(i*.07+.05)+'s';
+      el.innerHTML=`<span class="card-icon">${c.icon}</span><div class="card-body"><div class="card-name">${c.name}</div><div class="card-latin">${c.latin}</div><div class="card-star">${c.mainStar}</div></div><span class="card-arrow">›</span>`;
+      el.addEventListener('click',()=>this.openModal(c,this.season));g.appendChild(el);
+    });
+  }
+  openModal(c,season){
+    const d=DATA[season];
+    document.getElementById('mi').textContent=c.icon;
+    document.getElementById('mt').textContent=c.name;
+    document.getElementById('ml').textContent=c.latin;
+    document.getElementById('mb').textContent=`${d.emoji} ${d.title} · ${c.month} 최적 관측`;
+    document.getElementById('mig').innerHTML=`<div class="iitem"><div class="ilbl">으뜸별</div><div class="ival">${c.mainStar}</div></div><div class="iitem"><div class="ilbl">밝기</div><div class="ival">${c.mag}</div></div><div class="iitem"><div class="ilbl">최적 관측</div><div class="ival">${c.month}</div></div><div class="iitem"><div class="ilbl">영역</div><div class="ival">${c.area}</div></div>`;
+    document.getElementById('mmyth').innerHTML=c.mythology;
+    document.getElementById('mhtf').innerHTML=c.howToFind;
+    // Set season colors for modal
+    document.documentElement.style.setProperty('--pri',d.pri);
+    setTimeout(()=>drawMini(document.getElementById('mccanvas'),c,d.pri),80);
+    this.mbg.classList.add('on');document.body.style.overflow='hidden';
+    document.getElementById('modal').scrollTop=0;
+  }
+  closeModal(){this.mbg.classList.remove('on');document.body.style.overflow='';
+    // Restore season color
+    const d=DATA[this.season];
+    document.documentElement.style.setProperty('--pri',d.pri);
+  }
+  bindModal(){
+    document.getElementById('mc').addEventListener('click',()=>this.closeModal());
+    this.mbg.addEventListener('click',e=>{if(e.target===this.mbg)this.closeModal()});
+    addEventListener('keydown',e=>{if(e.key==='Escape')this.closeModal()});
+  }
+  animFlat(){const loop=t=>{this.map.draw(t,DATA[this.season].pri);requestAnimationFrame(loop)};requestAnimationFrame(loop)}
+  shootLoop(){setInterval(()=>{const s=document.createElement('div');s.className='shoot';s.style.top=Math.random()*35+'%';s.style.left=Math.random()*50+'%';s.style.width=(Math.random()*70+70)+'px';document.body.appendChild(s);setTimeout(()=>s.remove(),1600)},5000+Math.random()*5000)}
+}
+
+let app;
+document.addEventListener('DOMContentLoaded',()=>{app=new App()});
+</script>
+</body>
+</html>
