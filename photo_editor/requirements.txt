@@ -1,0 +1,11 @@
+# 필수
+PySide6>=6.5
+numpy>=1.23
+scipy>=1.9
+Pillow>=9.5
+tifffile>=2023.1
+
+# 선택 (설치하면 자동으로 사용됩니다)
+# astropy      # FITS 천체 데이터 열기
+# rawpy        # 카메라 RAW (CR2, NEF, ARW, DNG …) 열기
+# imagecodecs  # LZW 압축 16비트 TIFF를 정밀하게 열기
